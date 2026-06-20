@@ -1,6 +1,8 @@
 # Estimulador_CICATA_UNAM_GOOD
 En este repositorio trabajaremos con la parte de mandar datos por wifi al esp32, de igual manera todo se manejara mediante una pagina web donde el usuario puede ver sus datos en tiempo real
 
+El link a continuacion nos reedirige a la pagina de internet para poder modificar datos y ver el estado del esp32 en tiempo real
+https://petrack28.github.io/Estimulador_CICATA_UNAM_GOOD/
 
 <img width="950" height="1019" alt="cinvestav png" src="https://github.com/user-attachments/assets/3571d485-bff2-4d80-b744-58935e7567ff" />
 
