@@ -145,9 +145,38 @@ function conectar() {
 
   client.on('message', (topic, payload) => {
     if (topic === TOPIC_STATUS) {
-      actualizarStatus(payload.toString());
+      ultimoMensajeRecibido = Date.now();
+      const texto = payload.toString();
+      if (texto === "OFFLINE") {
+        mostrarOffline();
+      } else {
+        actualizarStatus(texto);
+      }
     }
   });
+
+  iniciarWatchdog();
+}
+
+let ultimoMensajeRecibido = 0;
+const TIMEOUT_SIN_RESPUESTA_MS = 8000; // si no hay mensaje en 8s, se considera offline
+let watchdogInterval = null;
+
+function iniciarWatchdog() {
+  if (watchdogInterval) clearInterval(watchdogInterval);
+  watchdogInterval = setInterval(() => {
+    if (connected && ultimoMensajeRecibido > 0 &&
+        (Date.now() - ultimoMensajeRecibido > TIMEOUT_SIN_RESPUESTA_MS)) {
+      mostrarOffline();
+    }
+  }, 2000);
+}
+
+function mostrarOffline() {
+  document.getElementById('statusBox').textContent =
+    "⚠️ ESP32 SIN RESPUESTA\nNo se ha recibido estado reciente.\nEl dispositivo puede estar apagado o sin conexión.";
+  document.getElementById('statusBox').style.color = "#dc2626";
+  document.getElementById('statusBox').style.fontWeight = "bold";
 }
 
 function desconectar() {
@@ -216,6 +245,8 @@ function detenerHeartbeat() {
 }
 
 function actualizarStatus(s) {
+  document.getElementById('statusBox').style.color = "#333";
+  document.getElementById('statusBox').style.fontWeight = "normal";
   const partes = s.split(",");
   if (partes.length < 8) {
     document.getElementById('statusBox').textContent = s;
