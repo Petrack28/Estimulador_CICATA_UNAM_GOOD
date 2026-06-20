@@ -156,7 +156,26 @@ function conectar() {
   });
 
   iniciarWatchdog();
+  solicitarWakeLock();
 }
+
+let wakeLock = null;
+async function solicitarWakeLock() {
+  try {
+    if ('wakeLock' in navigator) {
+      wakeLock = await navigator.wakeLock.request('screen');
+      console.log("Wake Lock activado: la pantalla no se apagará.");
+    }
+  } catch (err) {
+    console.warn("No se pudo activar Wake Lock:", err);
+  }
+}
+
+document.addEventListener('visibilitychange', async () => {
+  if (wakeLock !== null && document.visibilityState === 'visible') {
+    solicitarWakeLock();
+  }
+});
 
 let ultimoMensajeRecibido = 0;
 const TIMEOUT_SIN_RESPUESTA_MS = 8000; // si no hay mensaje en 8s, se considera offline
