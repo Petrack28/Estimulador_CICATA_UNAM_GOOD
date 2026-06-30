@@ -3,6 +3,7 @@
 #include <WiFiManager.h>
 #include <WiFiClientSecure.h>
 #include <PubSubClient.h>
+#include <Preferences.h>
 
 // --- PINES ---
 const int BUZZER_PIN = 11;
@@ -13,13 +14,16 @@ const int I2C_SCL_PIN = 34;
 
 const int POT_I2C_ADDRESS = 0x2C;
 volatile int valorPotenciometro = 150;
-volatile int anchoDePulsoUs = 250;
+volatile int anchoDePulsoUs = 250;      // tiempo en ALTO
+volatile int tiempoBajoUs = 19750;      // tiempo en BAJO (por defecto = 50Hz)
 volatile unsigned long duracionPruebaMs = 30 * 60000UL;
 
 volatile bool estimulacionActiva = false;
 volatile bool stepUpEncendido = false;
 unsigned long tiempoInicioEstimulacion = 0;
 TaskHandle_t tareaHandle = NULL;
+
+Preferences prefs;
 
 // --- WIFI ---
 // Ya no se define SSID/PASSWORD fijos: se configuran vía portal WiFiManager
@@ -42,6 +46,28 @@ PubSubClient mqttClient(secureClient);
 unsigned long ultimoHeartbeat = 0;
 const unsigned long TIMEOUT_HEARTBEAT_MS = 5000; // si no hay heartbeat en 5s, se detiene
 
+// ---------------- NVS: GUARDAR Y CARGAR VALORES ----------------
+void cargarValoresNVS() {
+  prefs.begin("estimulador", false);
+  valorPotenciometro = prefs.getInt("pot", 150);
+  anchoDePulsoUs     = prefs.getInt("pulsoAlto", 250);
+  tiempoBajoUs       = prefs.getInt("pulsoBajo", 19750);
+  duracionPruebaMs   = (unsigned long)prefs.getInt("duracion", 30) * 60000UL;
+  prefs.end();
+  Serial.printf("Valores cargados: pot=%d, alto=%d, bajo=%d, dur=%lums\n",
+                valorPotenciometro, anchoDePulsoUs, tiempoBajoUs, duracionPruebaMs);
+}
+
+void guardarValoresNVS() {
+  prefs.begin("estimulador", false);
+  prefs.putInt("pot",       valorPotenciometro);
+  prefs.putInt("pulsoAlto", anchoDePulsoUs);
+  prefs.putInt("pulsoBajo", tiempoBajoUs);
+  prefs.putInt("duracion",  (int)(duracionPruebaMs / 60000UL));
+  prefs.end();
+  Serial.println("Valores guardados en NVS.");
+}
+
 // ---------------- SONIDOS ----------------
 void melodiaBienvenida() {
   tone(BUZZER_PIN, 660); delay(250); noTone(BUZZER_PIN); delay(120);
@@ -56,10 +82,17 @@ void melodiaFin() {
   for (int i = 0; i < 4; i++) { tone(BUZZER_PIN, 120); delay(130); noTone(BUZZER_PIN); delay(50); }
 }
 
-void beepCuentaRegresiva() {
-  tone(BUZZER_PIN, 880); // beep agudo simple
+void beepEncendido() {
+  // BIP simple al encender
+  tone(BUZZER_PIN, 880);
   delay(200);
   noTone(BUZZER_PIN);
+}
+
+void doubleBipStepUp() {
+  // Doble BIP indicando que el Step-Up se va a encender
+  tone(BUZZER_PIN, 880); delay(150); noTone(BUZZER_PIN); delay(100);
+  tone(BUZZER_PIN, 880); delay(150); noTone(BUZZER_PIN);
 }
 
 // --- Notas para la melodía de Star Wars ---
@@ -135,7 +168,7 @@ void tareaThetaBurst(void *pvParameters) {
       digitalWrite(MOSFET_PIN, HIGH);
       delayMicroseconds(anchoDePulsoUs);
       digitalWrite(MOSFET_PIN, LOW);
-      delayMicroseconds(20000 - anchoDePulsoUs);
+      delayMicroseconds(tiempoBajoUs);  // tiempo en BAJO independiente
     }
     vTaskDelay(140 / portTICK_PERIOD_MS);
   }
@@ -190,13 +223,18 @@ void onMqttMessage(char* topic, byte* payload, unsigned int length) {
     int v = constrain(val.toInt(), 0, 255);
     valorPotenciometro = v;
     programarPotenciometro(v);
-  } else if (cmd == "PULSO") {
+    guardarValoresNVS();
+  } else if (cmd == "PULSO_ALTO") {
     int v = constrain(val.toInt(), 50, 19000);
     anchoDePulsoUs = v;
+    guardarValoresNVS();
+  } else if (cmd == "PULSO_BAJO") {
+    int v = constrain(val.toInt(), 50, 100000);
+    tiempoBajoUs = v;
+    guardarValoresNVS();
   } else if (cmd == "DURACION") {
     duracionPruebaMs = (unsigned long)val.toInt() * 60000UL;
-  } else if (cmd == "STEPUP") {
-    if (val == "1") encenderStepUp(); else apagarStepUp();
+    guardarValoresNVS();
   } else if (cmd == "ESTIM") {
     if (val == "1") iniciarEstimulacion(); else detenerEstimulacion();
   }
@@ -206,15 +244,18 @@ void enviarStatus() {
   String wifiConectado = (WiFi.status() == WL_CONNECTED) ? "1" : "0";
   String ssidActual = (WiFi.status() == WL_CONNECTED) ? WiFi.SSID() : "N/A";
   String mqttConectado = mqttClient.connected() ? "1" : "0";
+  float frecuencia = 1000000.0 / (anchoDePulsoUs + tiempoBajoUs);
 
   String s = String(stepUpEncendido ? "1" : "0") + "," +
              String(estimulacionActiva ? "1" : "0") + "," +
              String(valorPotenciometro) + "," +
              String(anchoDePulsoUs) + "," +
+             String(tiempoBajoUs) + "," +
              String(duracionPruebaMs / 60000UL) + "," +
              wifiConectado + "," +
              ssidActual + "," +
-             mqttConectado;
+             mqttConectado + "," +
+             String(frecuencia, 2); // frecuencia con 2 decimales
   mqttClient.publish(TOPIC_STATUS, s.c_str());
 }
 
@@ -235,7 +276,6 @@ bool conectarWiFi() {
     if (exito && WiFi.status() == WL_CONNECTED) {
       Serial.println("\nWiFi conectado. IP: " + WiFi.localIP().toString());
       Serial.println("Red: " + WiFi.SSID());
-      melodiaStarWars();
       return true;
     }
 
@@ -263,7 +303,6 @@ void conectarMQTT() {
       Serial.println("Conectado a MQTT");
       mqttClient.subscribe(TOPIC_CMD);
       mqttClient.subscribe(TOPIC_HEARTBEAT);
-      melodiaMQTTConectado(); // confirma conexión MQTT con tema de Mario
     } else {
       Serial.print("Fallo, rc=");
       Serial.println(mqttClient.state());
@@ -279,27 +318,45 @@ void setup() {
   Serial.println("Iniciando...");
 
   pinMode(CRITICAL_PIN, OUTPUT);
-  digitalWrite(CRITICAL_PIN, LOW);
+  digitalWrite(CRITICAL_PIN, LOW); // Step-Up apagado al inicio por seguridad
   pinMode(BUZZER_PIN, OUTPUT);
   pinMode(MOSFET_PIN, OUTPUT);
   digitalWrite(MOSFET_PIN, LOW);
 
   Wire.begin(I2C_SDA_PIN, I2C_SCL_PIN);
-  melodiaBienvenida();
 
-  Serial.println("\n--- ESPERA DE SEGURIDAD: 20 SEGUNDOS ---");
-  for (int i = 20; i > 0; i--) {
-    Serial.printf("Iniciando en... %d\n", i);
-    delay(1000);
-  }
-  beepCuentaRegresiva(); // pitido al terminar la cuenta regresiva
+  // Cargar valores guardados en memoria flash
+  cargarValoresNVS();
 
-  programarPotenciometro(valorPotenciometro);
+  // PASO 1: BIP de encendido
+  beepEncendido();
+  Serial.println("Dispositivo encendido.");
 
+  // PASO 2: Conectar WiFi y MQTT (respetando lógica actual)
   if (!conectarWiFi()) {
     Serial.println("No se logró conectar al WiFi en el arranque. Reintentando en loop()...");
   } else {
     conectarMQTT();
+
+    // Star Wars: WiFi + MQTT conectados exitosamente
+    Serial.println("WiFi y MQTT conectados. Sonando Star Wars...");
+    melodiaStarWars();
+
+    // PASO 3: esperar 5s y doble BIP → encender Step-Up
+    Serial.println("Esperando 5 segundos antes de encender Step-Up...");
+    delay(5000);
+    doubleBipStepUp();
+    encenderStepUp();
+    Serial.println("Step-Up encendido.");
+
+    // PASO 4: Esperar 10 segundos para estabilización del Step-Up
+    Serial.println("Esperando 10 segundos para estabilización...");
+    programarPotenciometro(valorPotenciometro);
+    delay(10000);
+
+    // Mario: dispositivo listo para usar
+    Serial.println("¡Listo! Esperando comando de estimulación desde la app.");
+    melodiaMQTTConectado();
   }
 }
 
