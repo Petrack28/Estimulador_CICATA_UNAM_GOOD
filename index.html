@@ -396,6 +396,19 @@ function actualizarStatus(s) {
   if (p.length < 10) { box.textContent = s; return; }
   const [stepup, estim, pot, alto, bajo, dur, wifiOk, ssid, mqttOk, freq] = p;
 
+  // Sincronizar botón de estimulación con el estado real del ESP32
+  const estimActiva = estim === "1";
+  if (estimOn !== estimActiva) {
+    estimOn = estimActiva;
+    const btn = document.getElementById('btnEstim');
+    btn.textContent = estimOn ? "Detener Estimulación" : "Iniciar Estimulación";
+    btn.className = estimOn ? "btn-toggle-on" : "btn-toggle-off";
+    if (!estimOn) {
+      detenerHeartbeat();
+      mostrarToast('🔔 Estimulación finalizada por tiempo.', 'toast-ok');
+    }
+  }
+
   // Solo actualizar campos del panel dev si no está abierto el panel
   if (sincronizarCamposDev) {
     document.getElementById('devPot').value  = pot;
