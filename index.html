@@ -59,7 +59,7 @@
   <div id="screenMain" class="screen active">
     <div class="titulo-row">
       <h1>⚡ Control Electroestimulador</h1>
-      <button class="btn-dev" onclick="mostrarLogin()">🔧 Opciones de desarrollador</button>
+      <button class="btn-dev" onclick="abrirDev()">🔧 Opciones de desarrollador</button>
     </div>
 
     <div class="card">
@@ -79,7 +79,7 @@
       <div class="row">
         <label>Duración (min)</label>
         <input type="number" id="duracion" value="30" min="1" max="120">
-        <button class="btn-send" onclick="enviar('DURACION', document.getElementById('duracion').value)">Enviar</button>
+        <button class="btn-send" onclick="enviarConexionRequerida('DURACION', document.getElementById('duracion').value)">Enviar</button>
       </div>
     </div>
 
@@ -165,6 +165,21 @@ let client = null;
 let connected = false;
 let estimOn = false;
 let heartbeatInterval = null;
+
+// ---------- VERIFICACIÓN DE CONEXIÓN ----------
+function alertaNoConectado() {
+  alert("⚠️ No estás conectado.\nPresiona el botón 'Conectar' antes de continuar.");
+}
+
+function abrirDev() {
+  if (!connected) { alertaNoConectado(); return; }
+  mostrarLogin();
+}
+
+function enviarConexionRequerida(cmd, val) {
+  if (!connected) { alertaNoConectado(); return; }
+  enviar(cmd, val);
+}
 
 // ---------- NAVEGACIÓN ENTRE PANTALLAS ----------
 function mostrarMain() {
@@ -277,6 +292,7 @@ function enviarTodosDev() {
 }
 
 function toggleEstim() {
+  if (!connected) { alertaNoConectado(); return; }
   estimOn = !estimOn;
   const btn = document.getElementById('btnEstim');
   btn.textContent = estimOn ? "Detener Estimulación" : "Iniciar Estimulación";
