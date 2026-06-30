@@ -7,23 +7,15 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/mqtt/5.3.4/mqtt.min.js"></script>
 <style>
   * { box-sizing: border-box; }
-  body {
-    font-family: -apple-system, Segoe UI, Roboto, Arial, sans-serif;
-    background: #f4f5f7; margin: 0; padding: 16px; color: #1a1a1a;
-  }
+  body { font-family: -apple-system, Segoe UI, Roboto, Arial, sans-serif; background: #f4f5f7; margin: 0; padding: 16px; color: #1a1a1a; }
   .container { max-width: 480px; margin: 0 auto; }
   .titulo-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
   h1 { font-size: 20px; margin: 0; }
-  .card {
-    background: #fff; border-radius: 12px; padding: 16px;
-    margin-bottom: 14px; box-shadow: 0 1px 3px rgba(0,0,0,0.08);
-  }
+  .card { background: #fff; border-radius: 12px; padding: 16px; margin-bottom: 14px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
   .card h2 { font-size: 14px; text-transform: uppercase; color: #666; margin: 0 0 12px 0; }
   .row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; gap: 8px; }
   .row label { font-size: 14px; flex: 1; }
-  .row input[type=number], .row input[type=text], .row input[type=password] {
-    width: 80px; padding: 8px; border: 1px solid #ccc; border-radius: 8px; font-size: 14px;
-  }
+  .row input[type=number], .row input[type=text], .row input[type=password] { width: 80px; padding: 8px; border: 1px solid #ccc; border-radius: 8px; font-size: 14px; }
   input.wide { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 8px; font-size: 14px; margin-bottom: 10px; }
   button { border: none; border-radius: 10px; padding: 10px 14px; font-size: 14px; font-weight: 600; cursor: pointer; }
   .btn-send { background: #2563eb; color: white; }
@@ -38,29 +30,19 @@
   .status-dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 6px; }
   .dot-green { background: #16a34a; }
   .dot-red { background: #dc2626; }
-  #statusBox {
-    background: #f8f9fa; border-radius: 8px; padding: 12px;
-    font-family: monospace; font-size: 13px; white-space: pre-line; min-height: 100px; color: #333;
-  }
+  #statusBox { background: #f8f9fa; border-radius: 8px; padding: 12px; font-family: monospace; font-size: 13px; white-space: pre-line; min-height: 100px; color: #333; }
   .conn-line { display: flex; align-items: center; font-size: 14px; margin-bottom: 8px; }
   .error-msg { color: #dc2626; font-size: 13px; margin-top: 6px; min-height: 18px; }
   .screen { display: none; }
   .screen.active { display: block; }
-  .toast {
-    display: none;
-    position: fixed;
-    bottom: 24px;
-    left: 50%;
-    transform: translateX(-50%);
-    padding: 12px 20px;
-    border-radius: 12px;
-    font-size: 14px;
-    font-weight: 600;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
-    z-index: 999;
-    text-align: center;
-    max-width: 320px;
-  }
+  .frecuencia-calc { background: #eff6ff; border-radius: 8px; padding: 10px 12px; font-size: 13px; color: #1e40af; margin-top: 8px; margin-bottom: 4px; }
+  .timer-box { background: #f0fdf4; border-radius: 10px; padding: 14px; text-align: center; margin-bottom: 4px; }
+  .timer-label { font-size: 13px; color: #16a34a; font-weight: 600; margin-bottom: 4px; }
+  .timer-value { font-size: 32px; font-weight: 700; color: #15803d; font-family: monospace; letter-spacing: 2px; }
+  .timer-box.inactivo { background: #f8f9fa; }
+  .timer-box.inactivo .timer-label { color: #9ca3af; }
+  .timer-box.inactivo .timer-value { color: #d1d5db; }
+  .toast { display: none; position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); padding: 12px 20px; border-radius: 12px; font-size: 14px; font-weight: 600; box-shadow: 0 4px 12px rgba(0,0,0,0.2); z-index: 999; text-align: center; max-width: 320px; }
   .toast-error { background: #dc2626; color: white; }
   .toast-ok { background: #16a34a; color: white; }
   .toast.visible { display: block; animation: fadeInOut 3s forwards; }
@@ -70,14 +52,11 @@
     75%  { opacity: 1; }
     100% { opacity: 0; }
   }
-    background: #eff6ff; border-radius: 8px; padding: 10px 12px;
-    font-size: 13px; color: #1e40af; margin-top: 8px; margin-bottom: 4px;
-  }
 </style>
 </head>
 <body>
 <div class="container">
-  <div id="toast" class="toast">⚠️ No estás conectado. Presiona "Conectar" primero.</div>
+  <div id="toast" class="toast"></div>
 
   <!-- PANTALLA PRINCIPAL -->
   <div id="screenMain" class="screen active">
@@ -99,11 +78,10 @@
     </div>
 
     <div class="card">
-      <h2>Parámetros</h2>
-      <div class="row">
-        <label>Duración (min)</label>
-        <input type="number" id="duracion" value="30" min="1" max="120">
-        <button class="btn-send" onclick="enviarConexionRequerida('DURACION', document.getElementById('duracion').value)">Enviar</button>
+      <h2>Tiempo de estimulación</h2>
+      <div id="timerBox" class="timer-box inactivo">
+        <div class="timer-label">Tiempo restante</div>
+        <div class="timer-value" id="timerValue">--:--</div>
       </div>
     </div>
 
@@ -143,27 +121,26 @@
       <h2>Parámetros avanzados</h2>
       <div class="row">
         <label>Potenciómetro (0-255)</label>
-        <input type="number" id="devPot" value="150" min="0" max="255"
-               onfocus="activarEdicionDev()" onblur="desactivarEdicionDev()">
+        <input type="number" id="devPot" value="150" min="0" max="255">
         <button class="btn-send" onclick="enviarDev('POT', 'devPot')">Enviar</button>
       </div>
       <div class="row">
         <label>Tiempo en ALTO (us)</label>
-        <input type="number" id="devAlto" value="250" min="50" max="50000"
-               oninput="calcFrecuencia()" onfocus="activarEdicionDev()" onblur="desactivarEdicionDev()">
+        <input type="number" id="devAlto" value="250" min="50" max="50000" oninput="calcFrecuencia()">
         <button class="btn-send" onclick="enviarDev('PULSO_ALTO', 'devAlto')">Enviar</button>
       </div>
       <div class="row">
         <label>Tiempo en BAJO (us)</label>
-        <input type="number" id="devBajo" value="19750" min="50" max="100000"
-               oninput="calcFrecuencia()">
+        <input type="number" id="devBajo" value="19750" min="50" max="100000" oninput="calcFrecuencia()">
         <button class="btn-send" onclick="enviarDev('PULSO_BAJO', 'devBajo')">Enviar</button>
       </div>
-      <div class="frecuencia-calc" id="frecuenciaCalc">
-        Frecuencia resultante: 50.00 Hz
+      <div class="row">
+        <label>Duración (min)</label>
+        <input type="number" id="devDuracion" value="30" min="1" max="120">
+        <button class="btn-send" onclick="enviarDev('DURACION', 'devDuracion')">Enviar</button>
       </div>
-      <button class="btn-send" style="width:100%;padding:12px;margin-top:6px;"
-              onclick="enviarTodosDev()">Enviar todos los valores</button>
+      <div class="frecuencia-calc" id="frecuenciaCalc">Frecuencia resultante: 50.00 Hz</div>
+      <button class="btn-send" style="width:100%;padding:12px;margin-top:6px;" onclick="enviarTodosDev()">Enviar todos los valores</button>
     </div>
 
     <button class="btn-back" onclick="volverDeDevAMain()">← Guardar y volver a la app</button>
@@ -172,7 +149,6 @@
 </div>
 
 <script>
-// ---------- CONFIGURACIÓN MQTT ----------
 const MQTT_HOST = "92531f7c6f4c44b7b5442f0fc08bc15e.s1.eu.hivemq.cloud";
 const MQTT_WSS_PORT = 8884;
 const MQTT_USER = "Thor123";
@@ -180,8 +156,6 @@ const MQTT_PASS = "Estimulador123";
 const TOPIC_CMD = "estimulador/cmd";
 const TOPIC_STATUS = "estimulador/status";
 const TOPIC_HEARTBEAT = "estimulador/heartbeat";
-
-// Credenciales del panel de desarrollador
 const DEV_USER = "estimulador";
 const DEV_PASS = "Thor123";
 
@@ -189,8 +163,40 @@ let client = null;
 let connected = false;
 let estimOn = false;
 let heartbeatInterval = null;
+let sincronizarCamposDev = true;
 
-// ---------- VERIFICACIÓN DE CONEXIÓN ----------
+// --- TIMER ---
+let timerInterval = null;
+let timerSegundos = 0;
+
+function iniciarTimer(minutos) {
+  detenerTimer();
+  timerSegundos = minutos * 60;
+  document.getElementById('timerBox').className = 'timer-box';
+  timerInterval = setInterval(() => {
+    timerSegundos--;
+    if (timerSegundos <= 0) {
+      timerSegundos = 0;
+      detenerTimer();
+    }
+    actualizarTimerUI();
+  }, 1000);
+  actualizarTimerUI();
+}
+
+function detenerTimer() {
+  if (timerInterval) { clearInterval(timerInterval); timerInterval = null; }
+  document.getElementById('timerBox').className = 'timer-box inactivo';
+  document.getElementById('timerValue').textContent = '--:--';
+}
+
+function actualizarTimerUI() {
+  const m = Math.floor(timerSegundos / 60).toString().padStart(2, '0');
+  const s = (timerSegundos % 60).toString().padStart(2, '0');
+  document.getElementById('timerValue').textContent = `${m}:${s}`;
+}
+
+// --- TOAST ---
 function mostrarToast(mensaje, tipo) {
   const toast = document.getElementById('toast');
   toast.className = 'toast';
@@ -198,22 +204,11 @@ function mostrarToast(mensaje, tipo) {
   toast.textContent = mensaje;
   toast.className = `toast ${tipo} visible`;
 }
-
 function alertaNoConectado() {
   mostrarToast('⚠️ No estás conectado. Presiona "Conectar" primero.', 'toast-error');
 }
 
-function abrirDev() {
-  if (!connected) { alertaNoConectado(); return; }
-  mostrarLogin();
-}
-
-function enviarConexionRequerida(cmd, val) {
-  if (!connected) { alertaNoConectado(); return; }
-  enviar(cmd, val);
-}
-
-// ---------- NAVEGACIÓN ENTRE PANTALLAS ----------
+// --- NAVEGACIÓN ---
 function mostrarMain() {
   document.getElementById('screenMain').className = 'screen active';
   document.getElementById('screenLogin').className = 'screen';
@@ -228,20 +223,20 @@ function mostrarLogin() {
   document.getElementById('screenDev').className = 'screen';
 }
 function mostrarDev() {
-  // Al entrar al panel, congelar sincronización de campos
   sincronizarCamposDev = false;
   document.getElementById('screenMain').className = 'screen';
   document.getElementById('screenLogin').className = 'screen';
   document.getElementById('screenDev').className = 'screen active';
 }
 function volverDeDevAMain() {
-  // Enviar y guardar todos los valores antes de salir
   enviarTodosDev();
-  // Reactivar sincronización al volver
   sincronizarCamposDev = true;
   mostrarMain();
 }
-
+function abrirDev() {
+  if (!connected) { alertaNoConectado(); return; }
+  mostrarLogin();
+}
 function intentarLogin() {
   const u = document.getElementById('loginUser').value.trim();
   const p = document.getElementById('loginPass').value.trim();
@@ -253,9 +248,7 @@ function intentarLogin() {
   }
 }
 
-let sincronizarCamposDev = true;
-
-// ---------- CÁLCULO DE FRECUENCIA EN TIEMPO REAL ----------
+// --- FRECUENCIA ---
 function calcFrecuencia() {
   const alto = parseFloat(document.getElementById('devAlto').value) || 0;
   const bajo = parseFloat(document.getElementById('devBajo').value) || 0;
@@ -264,20 +257,15 @@ function calcFrecuencia() {
   document.getElementById('frecuenciaCalc').textContent = `Frecuencia resultante: ${freq} Hz`;
 }
 
-// ---------- MQTT ----------
+// --- MQTT ---
 function conectar() {
   const url = `wss://${MQTT_HOST}:${MQTT_WSS_PORT}/mqtt`;
   client = mqtt.connect(url, {
-    username: MQTT_USER,
-    password: MQTT_PASS,
+    username: MQTT_USER, password: MQTT_PASS,
     clientId: "WebApp_" + Math.random().toString(16).substr(2, 8),
     reconnectPeriod: 3000
   });
-  client.on('connect', () => {
-    connected = true;
-    setConnUI(true);
-    client.subscribe(TOPIC_STATUS);
-  });
+  client.on('connect', () => { connected = true; setConnUI(true); client.subscribe(TOPIC_STATUS); });
   client.on('reconnect', () => setConnUI(false, "Reconectando..."));
   client.on('close', () => { connected = false; setConnUI(false); });
   client.on('error', (err) => console.error("MQTT error:", err));
@@ -292,48 +280,35 @@ function conectar() {
   iniciarWatchdog();
   solicitarWakeLock();
 }
-
 function desconectar() {
   detenerHeartbeat();
   if (client) client.end();
   connected = false;
   setConnUI(false);
 }
-
 function setConnUI(ok, customText) {
-  const dot = document.getElementById('dotConn');
-  const lbl = document.getElementById('lblConn');
-  dot.className = ok ? "status-dot dot-green" : "status-dot dot-red";
-  lbl.textContent = ok ? "Conectado" : (customText || "Desconectado");
+  document.getElementById('dotConn').className = ok ? "status-dot dot-green" : "status-dot dot-red";
+  document.getElementById('lblConn').textContent = ok ? "Conectado" : (customText || "Desconectado");
 }
-
 function enviar(cmd, val) {
   if (!connected) { alertaNoConectado(); return; }
   client.publish(TOPIC_CMD, `${cmd}:${val}`);
 }
-
-function enviarConexionRequerida(cmd, val) {
-  if (!connected) { alertaNoConectado(); return; }
-  client.publish(TOPIC_CMD, `${cmd}:${val}`);
-  mostrarToast('✅ Duración enviada correctamente.', 'toast-ok');
-}
-
 function enviarDev(cmd, inputId) {
   if (!connected) { alertaNoConectado(); return; }
   const val = document.getElementById(inputId).value;
   client.publish(TOPIC_CMD, `${cmd}:${val}`);
-  const nombres = { 'POT': 'Potenciómetro', 'PULSO_ALTO': 'Tiempo en ALTO', 'PULSO_BAJO': 'Tiempo en BAJO' };
+  const nombres = { 'POT': 'Potenciómetro', 'PULSO_ALTO': 'Tiempo en ALTO', 'PULSO_BAJO': 'Tiempo en BAJO', 'DURACION': 'Duración' };
   mostrarToast(`✅ ${nombres[cmd] || cmd} enviado correctamente.`, 'toast-ok');
 }
-
 function enviarTodosDev() {
   if (!connected) { alertaNoConectado(); return; }
   client.publish(TOPIC_CMD, `POT:${document.getElementById('devPot').value}`);
   client.publish(TOPIC_CMD, `PULSO_ALTO:${document.getElementById('devAlto').value}`);
   client.publish(TOPIC_CMD, `PULSO_BAJO:${document.getElementById('devBajo').value}`);
+  client.publish(TOPIC_CMD, `DURACION:${document.getElementById('devDuracion').value}`);
   mostrarToast('✅ Todos los valores enviados correctamente.', 'toast-ok');
 }
-
 function toggleEstim() {
   if (!connected) { alertaNoConectado(); return; }
   estimOn = !estimOn;
@@ -341,20 +316,24 @@ function toggleEstim() {
   btn.textContent = estimOn ? "Detener Estimulación" : "Iniciar Estimulación";
   btn.className = estimOn ? "btn-toggle-on" : "btn-toggle-off";
   enviar('ESTIM', estimOn ? "1" : "0");
-  if (estimOn) iniciarHeartbeat(); else detenerHeartbeat();
+  if (estimOn) {
+    iniciarHeartbeat();
+    const dur = parseInt(document.getElementById('devDuracion').value) || 30;
+    iniciarTimer(dur);
+  } else {
+    detenerHeartbeat();
+    detenerTimer();
+  }
 }
-
 function iniciarHeartbeat() {
   detenerHeartbeat();
-  heartbeatInterval = setInterval(() => {
-    if (connected) client.publish(TOPIC_HEARTBEAT, "ping");
-  }, 1500);
+  heartbeatInterval = setInterval(() => { if (connected) client.publish(TOPIC_HEARTBEAT, "ping"); }, 1500);
 }
 function detenerHeartbeat() {
   if (heartbeatInterval) { clearInterval(heartbeatInterval); heartbeatInterval = null; }
 }
 
-// ---------- WATCHDOG Y WAKE LOCK ----------
+// --- WATCHDOG Y WAKE LOCK ---
 let ultimoMensajeRecibido = 0;
 const TIMEOUT_SIN_RESPUESTA_MS = 8000;
 let watchdogInterval = null;
@@ -363,23 +342,16 @@ let wakeLock = null;
 function iniciarWatchdog() {
   if (watchdogInterval) clearInterval(watchdogInterval);
   watchdogInterval = setInterval(() => {
-    if (connected && ultimoMensajeRecibido > 0 &&
-        (Date.now() - ultimoMensajeRecibido > TIMEOUT_SIN_RESPUESTA_MS)) mostrarOffline();
+    if (connected && ultimoMensajeRecibido > 0 && (Date.now() - ultimoMensajeRecibido > TIMEOUT_SIN_RESPUESTA_MS)) mostrarOffline();
   }, 2000);
 }
-
 async function solicitarWakeLock() {
-  try {
-    if ('wakeLock' in navigator) {
-      wakeLock = await navigator.wakeLock.request('screen');
-      console.log("Wake Lock activado.");
-    }
-  } catch (err) { console.warn("No se pudo activar Wake Lock:", err); }
+  try { if ('wakeLock' in navigator) { wakeLock = await navigator.wakeLock.request('screen'); } }
+  catch (err) { console.warn("Wake Lock no disponible:", err); }
 }
 document.addEventListener('visibilitychange', async () => {
   if (wakeLock !== null && document.visibilityState === 'visible') solicitarWakeLock();
 });
-
 function mostrarOffline() {
   const box = document.getElementById('statusBox');
   box.textContent = "⚠️ ESP32 SIN RESPUESTA\nNo se ha recibido estado reciente.\nEl dispositivo puede estar apagado o sin conexión.";
@@ -387,7 +359,7 @@ function mostrarOffline() {
   box.style.fontWeight = "bold";
 }
 
-// ---------- ACTUALIZAR STATUS ----------
+// --- STATUS ---
 function actualizarStatus(s) {
   const box = document.getElementById('statusBox');
   box.style.color = "#333";
@@ -396,7 +368,7 @@ function actualizarStatus(s) {
   if (p.length < 10) { box.textContent = s; return; }
   const [stepup, estim, pot, alto, bajo, dur, wifiOk, ssid, mqttOk, freq] = p;
 
-  // Sincronizar botón de estimulación con el estado real del ESP32
+  // Sincronizar botón y timer con estado real del ESP32
   const estimActiva = estim === "1";
   if (estimOn !== estimActiva) {
     estimOn = estimActiva;
@@ -405,16 +377,19 @@ function actualizarStatus(s) {
     btn.className = estimOn ? "btn-toggle-on" : "btn-toggle-off";
     if (!estimOn) {
       detenerHeartbeat();
-      mostrarToast('🔔 Estimulación finalizada por tiempo.', 'toast-ok');
+      detenerTimer();
+      mostrarToast('🔔 Estimulación finalizada.', 'toast-ok');
+    } else {
+      iniciarTimer(parseInt(dur) || 30);
     }
   }
 
-  // Solo actualizar campos del panel dev si no está abierto el panel
+  // Sincronizar campos dev solo si el panel está cerrado
   if (sincronizarCamposDev) {
-    document.getElementById('devPot').value  = pot;
-    document.getElementById('devAlto').value = alto;
-    document.getElementById('devBajo').value = bajo;
-    document.getElementById('duracion').value = dur; // sincronizar duración
+    document.getElementById('devPot').value      = pot;
+    document.getElementById('devAlto').value     = alto;
+    document.getElementById('devBajo').value     = bajo;
+    document.getElementById('devDuracion').value = dur;
     calcFrecuencia();
   }
 
