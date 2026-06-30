@@ -305,7 +305,7 @@ function toggleEstim() {
 }
 function iniciarHeartbeat() {
   detenerHeartbeat();
-  heartbeatInterval = setInterval(() => { if (connected) client.publish(TOPIC_HEARTBEAT, "ping"); }, 1500);
+  heartbeatInterval = setInterval(() => { if (connected) client.publish(TOPIC_HEARTBEAT, "ping"); }, 1000);
 }
 function detenerHeartbeat() {
   if (heartbeatInterval) { clearInterval(heartbeatInterval); heartbeatInterval = null; }
