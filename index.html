@@ -165,35 +165,19 @@ let estimOn = false;
 let heartbeatInterval = null;
 let sincronizarCamposDev = true;
 
-// --- TIMER ---
-let timerInterval = null;
-let timerSegundos = 0;
-
-function iniciarTimer(minutos) {
-  detenerTimer();
-  timerSegundos = minutos * 60;
+// --- TIMER (sincronizado con ESP32) ---
+function actualizarTimerDesdeESP(durMinutos, transcurridoSeg) {
+  const totalSeg = durMinutos * 60;
+  const restante = Math.max(0, totalSeg - transcurridoSeg);
+  const m = Math.floor(restante / 60).toString().padStart(2, '0');
+  const s = (restante % 60).toString().padStart(2, '0');
   document.getElementById('timerBox').className = 'timer-box';
-  timerInterval = setInterval(() => {
-    timerSegundos--;
-    if (timerSegundos <= 0) {
-      timerSegundos = 0;
-      detenerTimer();
-    }
-    actualizarTimerUI();
-  }, 1000);
-  actualizarTimerUI();
+  document.getElementById('timerValue').textContent = `${m}:${s}`;
 }
 
 function detenerTimer() {
-  if (timerInterval) { clearInterval(timerInterval); timerInterval = null; }
   document.getElementById('timerBox').className = 'timer-box inactivo';
   document.getElementById('timerValue').textContent = '--:--';
-}
-
-function actualizarTimerUI() {
-  const m = Math.floor(timerSegundos / 60).toString().padStart(2, '0');
-  const s = (timerSegundos % 60).toString().padStart(2, '0');
-  document.getElementById('timerValue').textContent = `${m}:${s}`;
 }
 
 // --- TOAST ---
@@ -316,14 +300,8 @@ function toggleEstim() {
   btn.textContent = estimOn ? "Detener Estimulación" : "Iniciar Estimulación";
   btn.className = estimOn ? "btn-toggle-on" : "btn-toggle-off";
   enviar('ESTIM', estimOn ? "1" : "0");
-  if (estimOn) {
-    iniciarHeartbeat();
-    const dur = parseInt(document.getElementById('devDuracion').value) || 30;
-    iniciarTimer(dur);
-  } else {
-    detenerHeartbeat();
-    detenerTimer();
-  }
+  if (estimOn) iniciarHeartbeat();
+  else { detenerHeartbeat(); detenerTimer(); }
 }
 function iniciarHeartbeat() {
   detenerHeartbeat();
@@ -375,8 +353,8 @@ function actualizarStatus(s) {
   box.style.color = "#333";
   box.style.fontWeight = "normal";
   const p = s.split(",");
-  if (p.length < 10) { box.textContent = s; return; }
-  const [stepup, estim, pot, alto, bajo, dur, wifiOk, ssid, mqttOk, freq] = p;
+  if (p.length < 11) { box.textContent = s; return; }
+  const [stepup, estim, pot, alto, bajo, dur, wifiOk, ssid, mqttOk, freq, transcurrido] = p;
 
   // Sincronizar botón y timer con estado real del ESP32
   const estimActiva = estim === "1";
@@ -389,9 +367,12 @@ function actualizarStatus(s) {
       detenerHeartbeat();
       detenerTimer();
       mostrarToast('🔔 Estimulación finalizada.', 'toast-ok');
-    } else {
-      iniciarTimer(parseInt(dur) || 30);
     }
+  }
+
+  // Actualizar timer con el tiempo real del ESP32
+  if (estimActiva) {
+    actualizarTimerDesdeESP(parseInt(dur), parseInt(transcurrido));
   }
 
   // Sincronizar campos dev solo si el panel está cerrado
