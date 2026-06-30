@@ -119,17 +119,20 @@
       <h2>Parámetros avanzados</h2>
       <div class="row">
         <label>Potenciómetro (0-255)</label>
-        <input type="number" id="devPot" value="150" min="0" max="255">
+        <input type="number" id="devPot" value="150" min="0" max="255"
+               onfocus="activarEdicionDev()" onblur="desactivarEdicionDev()">
         <button class="btn-send" onclick="enviarDev('POT', 'devPot')">Enviar</button>
       </div>
       <div class="row">
         <label>Tiempo en ALTO (us)</label>
-        <input type="number" id="devAlto" value="250" min="50" max="50000" oninput="calcFrecuencia()">
+        <input type="number" id="devAlto" value="250" min="50" max="50000"
+               oninput="calcFrecuencia()" onfocus="activarEdicionDev()" onblur="desactivarEdicionDev()">
         <button class="btn-send" onclick="enviarDev('PULSO_ALTO', 'devAlto')">Enviar</button>
       </div>
       <div class="row">
         <label>Tiempo en BAJO (us)</label>
-        <input type="number" id="devBajo" value="19750" min="50" max="100000" oninput="calcFrecuencia()">
+        <input type="number" id="devBajo" value="19750" min="50" max="100000"
+               oninput="calcFrecuencia()" onfocus="activarEdicionDev()" onblur="desactivarEdicionDev()">
         <button class="btn-send" onclick="enviarDev('PULSO_BAJO', 'devBajo')">Enviar</button>
       </div>
       <div class="frecuencia-calc" id="frecuenciaCalc">
@@ -193,6 +196,11 @@ function intentarLogin() {
     document.getElementById('loginError').textContent = '❌ Usuario o contraseña incorrectos.';
   }
 }
+
+let editandoDev = false;
+
+function activarEdicionDev() { editandoDev = true; }
+function desactivarEdicionDev() { setTimeout(() => { editandoDev = false; }, 3000); }
 
 // ---------- CÁLCULO DE FRECUENCIA EN TIEMPO REAL ----------
 function calcFrecuencia() {
@@ -323,11 +331,13 @@ function actualizarStatus(s) {
   if (p.length < 10) { box.textContent = s; return; }
   const [stepup, estim, pot, alto, bajo, dur, wifiOk, ssid, mqttOk, freq] = p;
 
-  // Actualizar campos del panel dev con los valores actuales del ESP32
-  document.getElementById('devPot').value  = pot;
-  document.getElementById('devAlto').value = alto;
-  document.getElementById('devBajo').value = bajo;
-  calcFrecuencia();
+  // Solo actualizar campos del panel dev si el usuario no los está editando
+  if (!editandoDev) {
+    document.getElementById('devPot').value  = pot;
+    document.getElementById('devAlto').value = alto;
+    document.getElementById('devBajo').value = bajo;
+    calcFrecuencia();
+  }
 
   box.textContent =
 `WiFi ESP32:    ${wifiOk === "1" ? "✅ Conectado a " + ssid : "❌ Desconectado"}
