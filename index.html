@@ -357,6 +357,16 @@ function mostrarOffline() {
   box.textContent = "⚠️ ESP32 SIN RESPUESTA\nNo se ha recibido estado reciente.\nEl dispositivo puede estar apagado o sin conexión.";
   box.style.color = "#dc2626";
   box.style.fontWeight = "bold";
+
+  // Resetear timer y botón de estimulación
+  if (estimOn) {
+    estimOn = false;
+    const btn = document.getElementById('btnEstim');
+    btn.textContent = "Iniciar Estimulación";
+    btn.className = "btn-toggle-off";
+    detenerHeartbeat();
+    detenerTimer();
+  }
 }
 
 // --- STATUS ---
