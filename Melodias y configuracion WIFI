@@ -1,0 +1,64 @@
+Documentacion para la conexion al server WIFI
+
+MQTT_HOST = "92531f7c6f4c44b7b5442f0fc08bc15e.s1.eu.hivemq.cloud"
+MQTT_PORT = 8883
+MQTT_USER = "Thor123"
+MQTT_PASS = "Estimulador123"
+
+
+--------------------------------------
+Notas para las melodias establecidas
+-------------------------------------
+
+Notas de la melodia de StarWars 
+
+const int nC = 261, nD = 294, nE = 329, nF = 349, nG = 391, nGS = 415, nA = 440, nAS = 455, nB = 466;
+const int nCH = 523, nCSH = 554, nDH = 587, nDSH = 622, nEH = 659, nFH = 698, nFSH = 740, nGH = 783, nGSH = 830, nAH = 880;
+
+void melodiaStarWars() {
+  tone(BUZZER_PIN, nA, 500); delay(550);
+  tone(BUZZER_PIN, nA, 500); delay(550);
+  tone(BUZZER_PIN, nA, 500); delay(550);
+  tone(BUZZER_PIN, nF, 350); delay(400);
+  tone(BUZZER_PIN, nCH, 150); delay(200);
+
+  tone(BUZZER_PIN, nA, 500); delay(550);
+  tone(BUZZER_PIN, nF, 350); delay(400);
+  tone(BUZZER_PIN, nCH, 150); delay(200);
+  tone(BUZZER_PIN, nA, 1000); delay(1050);
+
+  tone(BUZZER_PIN, nEH, 500); delay(550);
+  tone(BUZZER_PIN, nEH, 500); delay(550);
+  tone(BUZZER_PIN, nEH, 500); delay(550);
+  tone(BUZZER_PIN, nFH, 350); delay(400);
+  tone(BUZZER_PIN, nCH, 150); delay(200);
+
+  tone(BUZZER_PIN, nGS, 500); delay(550);
+  tone(BUZZER_PIN, nF, 350); delay(400);
+  tone(BUZZER_PIN, nCH, 150); delay(200);
+  tone(BUZZER_PIN, nA, 1000); delay(1050);
+
+  noTone(BUZZER_PIN);
+}
+
+
+Notas de la melodia de Mario
+
+int melodiaMario[] = {
+  440, 440, 0, 440, 0, 349, 440, 0, 523, 0, 392, 0,
+  349, 392, 0, 294, 392, 440, 415, 392, 349, 440, 523, 587,
+  0, 349, 523, 440, 349, 392, 330
+};
+
+int duracionesMario[] = {
+  8, 8, 8, 8, 8, 8, 8, 8, 4, 4, 4, 4,
+  8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 4,
+  4, 8, 8, 8, 8, 8, 4
+};
+
+
+
+
+
+
+
