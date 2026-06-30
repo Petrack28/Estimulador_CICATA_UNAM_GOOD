@@ -52,8 +52,6 @@
     bottom: 24px;
     left: 50%;
     transform: translateX(-50%);
-    background: #dc2626;
-    color: white;
     padding: 12px 20px;
     border-radius: 12px;
     font-size: 14px;
@@ -63,6 +61,8 @@
     text-align: center;
     max-width: 320px;
   }
+  .toast-error { background: #dc2626; color: white; }
+  .toast-ok { background: #16a34a; color: white; }
   .toast.visible { display: block; animation: fadeInOut 3s forwards; }
   @keyframes fadeInOut {
     0%   { opacity: 0; transform: translateX(-50%) translateY(10px); }
@@ -191,11 +191,16 @@ let estimOn = false;
 let heartbeatInterval = null;
 
 // ---------- VERIFICACIÓN DE CONEXIÓN ----------
-function alertaNoConectado() {
+function mostrarToast(mensaje, tipo) {
   const toast = document.getElementById('toast');
   toast.className = 'toast';
-  void toast.offsetWidth; // forzar reflow para reiniciar animación
-  toast.className = 'toast visible';
+  void toast.offsetWidth;
+  toast.textContent = mensaje;
+  toast.className = `toast ${tipo} visible`;
+}
+
+function alertaNoConectado() {
+  mostrarToast('⚠️ No estás conectado. Presiona "Conectar" primero.', 'toast-error');
 }
 
 function abrirDev() {
@@ -303,19 +308,30 @@ function setConnUI(ok, customText) {
 }
 
 function enviar(cmd, val) {
-  if (!connected) { alert("No estás conectado"); return; }
+  if (!connected) { alertaNoConectado(); return; }
   client.publish(TOPIC_CMD, `${cmd}:${val}`);
 }
 
+function enviarConexionRequerida(cmd, val) {
+  if (!connected) { alertaNoConectado(); return; }
+  client.publish(TOPIC_CMD, `${cmd}:${val}`);
+  mostrarToast('✅ Duración enviada correctamente.', 'toast-ok');
+}
+
 function enviarDev(cmd, inputId) {
+  if (!connected) { alertaNoConectado(); return; }
   const val = document.getElementById(inputId).value;
-  enviar(cmd, val);
+  client.publish(TOPIC_CMD, `${cmd}:${val}`);
+  const nombres = { 'POT': 'Potenciómetro', 'PULSO_ALTO': 'Tiempo en ALTO', 'PULSO_BAJO': 'Tiempo en BAJO' };
+  mostrarToast(`✅ ${nombres[cmd] || cmd} enviado correctamente.`, 'toast-ok');
 }
 
 function enviarTodosDev() {
-  enviar('POT',        document.getElementById('devPot').value);
-  enviar('PULSO_ALTO', document.getElementById('devAlto').value);
-  enviar('PULSO_BAJO', document.getElementById('devBajo').value);
+  if (!connected) { alertaNoConectado(); return; }
+  client.publish(TOPIC_CMD, `POT:${document.getElementById('devPot').value}`);
+  client.publish(TOPIC_CMD, `PULSO_ALTO:${document.getElementById('devAlto').value}`);
+  client.publish(TOPIC_CMD, `PULSO_BAJO:${document.getElementById('devBajo').value}`);
+  mostrarToast('✅ Todos los valores enviados correctamente.', 'toast-ok');
 }
 
 function toggleEstim() {
