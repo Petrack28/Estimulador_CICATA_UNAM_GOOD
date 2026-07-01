@@ -44,7 +44,7 @@ PubSubClient mqttClient(secureClient);
 
 // --- HEARTBEAT DE SEGURIDAD ---
 unsigned long ultimoHeartbeat = 0;
-const unsigned long TIMEOUT_HEARTBEAT_MS = 5000; // si no hay heartbeat en 5s, se detiene
+const unsigned long TIMEOUT_HEARTBEAT_MS = 10000; // 10 segundos de margen para red en la nube
 
 // ---------------- NVS: GUARDAR Y CARGAR VALORES ----------------
 void cargarValoresNVS() {
@@ -246,6 +246,12 @@ void enviarStatus() {
   String mqttConectado = mqttClient.connected() ? "1" : "0";
   float frecuencia = 1000000.0 / (anchoDePulsoUs + tiempoBajoUs);
 
+  // Tiempo transcurrido en segundos (0 si no está estimulando)
+  unsigned long transcurrido = 0;
+  if (estimulacionActiva) {
+    transcurrido = (millis() - tiempoInicioEstimulacion) / 1000;
+  }
+
   String s = String(stepUpEncendido ? "1" : "0") + "," +
              String(estimulacionActiva ? "1" : "0") + "," +
              String(valorPotenciometro) + "," +
@@ -255,7 +261,8 @@ void enviarStatus() {
              wifiConectado + "," +
              ssidActual + "," +
              mqttConectado + "," +
-             String(frecuencia, 2); // frecuencia con 2 decimales
+             String(frecuencia, 2) + "," +
+             String(transcurrido); // segundos transcurridos
   mqttClient.publish(TOPIC_STATUS, s.c_str());
 }
 
