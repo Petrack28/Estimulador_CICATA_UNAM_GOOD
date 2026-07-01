@@ -367,6 +367,10 @@ function actualizarStatus(s) {
       detenerHeartbeat();
       detenerTimer();
       mostrarToast('🔔 Estimulación finalizada.', 'toast-ok');
+    } else {
+      // Estimulación ya activa en ESP32 (ej: reconexión tras refrescar página)
+      iniciarHeartbeat();
+      mostrarToast('⚡ Estimulación en curso — heartbeat reactivado.', 'toast-ok');
     }
   }
 
